@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
-<th:div th:fragment="author-content(background, smallTitle, bigTitle, detail,buttonUrl,buttonTitle)"
+<div th:fragment="author-content(background, smallTitle, bigTitle, detail,buttonUrl,buttonTitle)"
         class="author-content author-content-item essayPage single"
         th:style="'background:url('+${background}+') left 28% / cover no-repeat !important;'">
     <div class="card-content">
@@ -11,11 +11,11 @@
         </div>
         <div class="banner-button-group" th:if="${not #strings.isEmpty(buttonUrl)}">
             <a class="banner-button" target="_blank" th:href="${buttonUrl}">
-                <i class="fas fa-circle-chevron-right"></i>
+                <i class="haofont hao-icon-circle-arrow-right"></i>
                 <span class="banner-button-text" th:text="${buttonTitle}"></span>
             </a>
         </div>
     </div>
-</th:div>
+</div>
 
 </html>

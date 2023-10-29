@@ -1,23 +1,29 @@
 <!DOCTYPE html>
-<html lang="en" th:replace="~{modules/layouts/layout :: layout(content = ~{::content}, htmlType = 'fcircle')}"
-      xmlns:th="http://www.thymeleaf.org">
-
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{modules/layouts/layout :: layout(content = ~{::content}, htmlType = 'fcircle',title = ${singlePage.spec.title + ' | ' + site.title}, head = ~{::head} )}">
+<th:block th:fragment="head">
+    <th:block th:replace="~{modules/common/open-graph :: open-graph(_title = ${singlePage.spec.title},
+                _permalink = ${singlePage.status.permalink},
+                _cover = ${singlePage.spec.cover},
+                _excerpt = ${singlePage.status.excerpt},
+                _type = 'website')}"></th:block>
+</th:block>
 <th:block th:fragment="content">
 
     <div class="page" id="body-wrap">
 
         <!-- 头部导航栏 -->
         <header class="not-top-img" id="page-header">
-            <nav th:replace="~{modules/nav :: nav(title = null)}"></nav>
+            <nav th:replace="~{modules/nav :: nav(title = ${singlePage.spec.title})}"></nav>
         </header>
         <main class="layout hide-aside" id="content-inner">
             <div id="page">
-                <th:div  th:replace="~{macro/author-content :: author-content(background = ${theme.config.fcircle.backgroundImg},
+                <div  th:replace="~{macro/author-content :: author-content(background = ${theme.config.fcircle.backgroundImg},
                 smallTitle = ${theme.config.fcircle.smallTitle},
                 bigTitle = ${theme.config.fcircle.bigTitle},
                 detail = ${theme.config.fcircle.detail},
                 buttonUrl = ${theme.config.fcircle.buttonUrl},
-                buttonTitle = ${theme.config.fcircle.buttonTitle})}" />
+                buttonTitle = ${theme.config.fcircle.buttonTitle})}" ></div>
                 <!--钓鱼-->
                 <th:block th:if="${theme.config.fcircle.fcircleRandomFriendsEnable}" >
                     <div  class="title-h2-a">
@@ -49,8 +55,8 @@
                     <div class="title-h2-a-right"><span>以下内容自动生成，未经过审核</span></div>
                 </div>
                 <div id="hexo-circle-of-friends-root"></div>
-                <script>
-                    let UserConfig = {
+                <script type="text/javascript">
+                    var UserConfig = {
                         // 填写你的api地址
                         private_api_url: "[(${theme.config.fcircle.apiurl})]",
                         // 点击加载更多时，一次最多加载几篇文章，默认10
@@ -70,6 +76,13 @@
                     .cf-manage-pannel[data-v-34921c7c] {
                         width: 80% !important;
                         height: 80% !important;
+                    }
+                    .cf-article-author:hover {
+                        color: var(--heo-card-bg)!important
+                    }
+                    #cf-more:hover{
+                        background: var(--heo-lighttext)!important;
+                        color: var(--heo-card-bg)!important
                     }
                 </style>
 

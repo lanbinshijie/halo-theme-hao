@@ -1,12 +1,18 @@
 <!DOCTYPE html>
-<html lang="en" th:replace="~{modules/layouts/layout :: layout(content = ~{::content}, htmlType = 'category')}"
-      xmlns:th="http://www.thymeleaf.org">
-
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{modules/layouts/layout :: layout(content = ~{::content}, htmlType = 'category',title = ${'分类' + ' | ' + site.title}, head = ~{::head})}">
+<th:block th:fragment="head">
+    <th:block th:replace="~{modules/common/open-graph :: open-graph(_title = '分类目录',
+                _permalink = '/categories',
+                _cover = ${theme.config.other.opengraph.image},
+                _excerpt = ${site.seo.description},
+                _type = 'website')}"></th:block>
+</th:block>
 <th:block th:fragment="content">
 
     <div class="page" id="body-wrap">
         <header class="not-top-img" id="page-header">
-            <nav th:replace="~{modules/nav :: nav(title = null)}"></nav>
+            <nav th:replace="~{modules/nav :: nav(title = '分类')}"></nav>
         </header>
         <main class="layout hide-aside" id="content-inner">
 
@@ -35,9 +41,9 @@
                             </a>
                         </div>
                     </div>
-                    <div class="js-pjax">
-                        <script src="https://lf3-cdn-tos.bytecdntp.com/cdn/expire-1-M/vue/2.6.14/vue.min.js"></script>
-                        <script th:src="${assets_link + '/libs/no3d/no3d.js'}"></script>
+                    <div>
+                        <script data-pjax src="https://lf3-cdn-tos.bytecdntp.com/cdn/expire-1-M/vue/2.6.14/vue.min.js"></script>
+                        <script data-pjax th:src="${assets_link + '/libs/no3d/no3d.min.js'}"></script>
                     </div>
                 </th:block>
             </div>

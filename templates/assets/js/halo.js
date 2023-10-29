@@ -34,9 +34,6 @@ let halo = {
             return;
         }
 
-
-
-
         const enable = GLOBAL_CONFIG.prism.enable;
         if (!enable) return;
         const isEnableTitle = GLOBAL_CONFIG.prism.enable_title;
@@ -133,9 +130,6 @@ let halo = {
             return settings;
         }
 
-
-
-
         var r = Prism.plugins.toolbar.hook = function (a) {
 
 
@@ -181,8 +175,6 @@ let halo = {
 
             }
 
-
-
             const prismToolsFn = function (e) {
                 const $target = e.target.classList;
                 if ($target.contains("code-expander")) prismShrinkFn(this);
@@ -191,7 +183,7 @@ let halo = {
             //折叠
             if(isEnableExpander){
                 var expander = document.createElement("i");
-                expander.className = 'fa-sharp fa-solid fa-caret-down code-expander cursor-pointer'
+                expander.className = 'fa-sharp fa-solid haofont hao-icon-angle-down code-expander cursor-pointer'
                 customItem.appendChild(expander)
 
                 expander.addEventListener('click', prismToolsFn)
@@ -199,7 +191,6 @@ let halo = {
 
 
             }
-
 
             const expandCode = function () {
                 this.classList.toggle("expand-done");
@@ -216,9 +207,6 @@ let halo = {
                 ele.addEventListener("click", expandCode);
                 r.offsetParent.appendChild(ele);
             }
-
-
-
 
             const prismShrinkFn = ele => {
                 const $nextEle = r.offsetParent.lastElementChild.classList
@@ -269,9 +257,8 @@ let halo = {
             document.head.appendChild(a)
     },
 
-
-    danmu: (url,token,maxBarrage)=>{
-        const e = new EasyDanmaku({
+    danmu: ()=>{
+        const e = new EasyDanmakuMin({
             el: "#danmu",
             line: 10,
             speed: 20,
@@ -283,63 +270,92 @@ let halo = {
             e.batchSend(t, !0);
         else {
             let n = [];
-            function a(e) {
-                return e = (e = (e = (e = (e = e.replace(/<\/*br>|[\s\uFEFF\xA0]+/g, "")).replace(/<img.*?>/g, "[图片]")).replace(/<a.*?>.*?<\/a>/g, "[链接]")).replace(/<pre.*?>.*?<\/pre>/g, "[代码块]")).replace(/<.*?>/g, "")
+            if(GLOBAL_CONFIG.source.comments.use == 'Twikoo'){
+                fetch(GLOBAL_CONFIG.source.twikoo.twikooUrl, {
+                    method: "POST",
+                    body: JSON.stringify({
+                        event: "GET_RECENT_COMMENTS",
+                        accessToken: GLOBAL_CONFIG.source.twikoo.accessToken,
+                        includeReply: !1,
+                        pageSize: 5
+                    }),
+                    headers: {
+                        "Content-Type": "application/json"
+                    }
+                }).then((e=>e.json())).then((({data: t})=>{
+                        t.forEach((e=>{
+                                null == e.avatar && (e.avatar = "https://cravatar.cn/avatar/d615d5793929e8c7d70eab5f00f7f5f1?d=mp"),
+                                    n.push({
+                                        avatar: e.avatar,
+                                        content: e.nick + "：" + btf.changeContent(e.comment),
+                                        href: e.url + '#' + e.id
+
+                                    })
+                            }
+                        )),
+                            e.batchSend(n, !0),
+                            saveToLocal.set("danmu", n, .02)
+                    }
+                ))
             }
-            fetch(url, {
-                method: "POST",
-                body: JSON.stringify({
-                    event: "GET_RECENT_COMMENTS",
-                    accessToken: token,
-                    includeReply: !1,
-                    pageSize: maxBarrage
-                }),
-                headers: {
-                    "Content-Type": "application/json"
+            if(GLOBAL_CONFIG.source.comments.use == 'Artalk'){
+                const statheaderList = {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'Origin': window.location.origin
+                    },
+                    body: new URLSearchParams({
+                        'site_name': GLOBAL_CONFIG.source.artalk.siteName,
+                        'limit': '100',
+                        'type':'latest_comments'
+                    })
                 }
-            }).then((e=>e.json())).then((({data: t})=>{
-                    t.forEach((e=>{
-                            null == e.avatar && (e.avatar = "https://cravatar.cn/avatar/d615d5793929e8c7d70eab5f00f7f5f1?d=mp"),
+                fetch(GLOBAL_CONFIG.source.artalk.artalkUrl + 'api/stat', statheaderList)
+                    .then((e=>e.json())).then((({data: t})=>{
+                        t.forEach((e=>{
                                 n.push({
-                                    avatar: e.avatar,
-                                    content: e.nick + "：" + a(e.comment),
-                                    href: e.url + '#' + e.id
+                                    avatar: 'https://cravatar.cn/avatar/' + e.email_encrypted + '?d=mp&s=240',
+                                    content: e.nick + "：" + btf.changeContent(e.content_marked),
+                                    href: e.page_url + '#atk-comment-' + e.id
 
                                 })
-                        }
-                    )),
-                        e.batchSend(n, !0),
-                        saveToLocal.set("danmu", n, .02)
+                            }
+                        )),
+                            e.batchSend(n, !0),
+                            saveToLocal.set("danmu", n, .02)
+                    }
+                ))
+            }
+            if(GLOBAL_CONFIG.source.comments.use == 'Waline'){
+                const loadWaline = () => {
+                    Waline.RecentComments({
+                        serverURL: GLOBAL_CONFIG.source.waline.serverURL,
+                        count: 50
+                    }).then(({ comments }) => {
+                        const walineArray = comments.map(e => {
+                            return {
+                                'content': e.nick + "：" + btf.changeContent(e.comment),
+                                'avatar': e.avatar,
+                                'href': e.url + '#' + e.objectId,
+                            }
+                        })
+                        e.batchSend(walineArray, !0),
+                            saveToLocal.set("danmu", walineArray, .02)
+                    })
                 }
-            ))
+                if (typeof Waline === 'object') loadWaline()
+                else getScript(GLOBAL_CONFIG.source.waline.js).then(loadWaline)
+            }
+
         }
         document.getElementById("danmuBtn").innerHTML = "<button class=\"hideBtn\" onclick=\"document.getElementById('danmu').classList.remove('hidedanmu')\">显示弹幕</button> <button class=\"hideBtn\" onclick=\"document.getElementById('danmu').classList.add('hidedanmu')\">隐藏弹幕</button>"
     },
-    //关闭留言板评论弹幕
-    closeCommentBarrage: function () {
-        let commentBarrage = document.querySelector('.comment-barrage');
-        if (commentBarrage) {
-            if ($(".comment-barrage").is(":visible")) {
-                $(".comment-barrage").hide();
-                $(".menu-commentBarrage-text").text("显示热评");
-                document.querySelector("#consoleCommentBarrage").classList.remove("on");
-                localStorage.setItem('commentBarrageSwitch', 'false');
-            }
-        }
-    },
-    //打开评论弹幕
-    openCommentBarrage: function () {
-        let commentBarrage = document.querySelector('.comment-barrage');
-        if (commentBarrage) {
-            if ($(".comment-barrage").is(":hidden")) {
-                $(".comment-barrage").show();
-                $(".menu-commentBarrage-text").text("关闭热评");
-                document.querySelector("#consoleCommentBarrage").classList.add("on");
-                localStorage.removeItem('commentBarrageSwitch');
-                btf.snackbarShow("✨ 已开启评论弹幕", false, 2000)
-            }
-        }
-    },
+
+    changeMarginLeft(element) {
+        var randomMargin = Math.floor(Math.random() * 901) + 100; // 生成100-1000之间的随机数
+        element.style.marginLeft = randomMargin + 'px';
+    }
 
 
 }

@@ -2,6 +2,10 @@ apiVersion: theme.halo.run/v1alpha1
 kind: Theme
 metadata:
   name: theme-hao
+  annotations:
+    # Add supports for Halo App Store
+    # https://halo.run/store/apps/app-MgZJX
+    "store.halo.run/app-id": "app-MgZJX"
 spec:
   displayName: Hao
   author:
@@ -33,19 +37,19 @@ spec:
         description: 待办清单页面
         screenshot:
         file: todolist.html
-      - name: 我的装备页面模版
-        description: 我的装备页面
-        screenshot:
-        file: equipment.html
       - name: 相册页面模版
         description: 相册页面
         screenshot:
         file: album.html
+      - name: 最近评论页面模版
+        description: 最近评论页面
+        screenshot:
+        file: new_comment.html
   description: Halo 2.x Theme base on Thymeleaf, Referring to Butterfly and Heo
   logo: https://liuzhihang.com/upload/logo.jpg
   website: https://liuzhihang.com
-  repo: https://github.com/liuzhihang/halo-theme-hao
+  repo: https://githubfast.com/liuzhihang/halo-theme-hao
   settingName: "theme-hao-setting"
   configMapName: "theme-hao-configMap"
-  version: "1.3.1"
+  version: "1.4.1"
   require: ">=2.8.0"

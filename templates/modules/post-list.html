@@ -3,43 +3,45 @@
 
 <th:block th:fragment="post-list"
           th:with='postItems=${posts.items},
-          postRandomImg=${#strings.contains(theme.config.layout.postRandomImg,"?") ? theme.config.layout.postRandomImg : theme.config.layout.postRandomImg+"?"}'>
+          postRandomImg=${#strings.contains(theme.config.layout.postRandomImg,"?") ? theme.config.layout.postRandomImg+"&" : theme.config.layout.postRandomImg+"?"}'>
 
     <!-- card，需要添加在没有图片时使用随机图片 -->
     <div class="recent-post-item"
          th:classappend="${theme.config.layout.post.cols} + ' ' +
          ${theme.config.layout.post.postLocation} + ' ' +
-         (${iStat.even} ? 'even' : 'odd') +
+         (${iStat.even} ? 'even' : 'odd') + ' ' +
          (${post.spec.pinned} ? 'pinned-post-item' : '')"
+         th:attr="onclick='pjax.loadUrl(\''+ @{${post.status.permalink}} +'\')'"
          th:each="post,iStat : ${postItems}">
-
         <div class="post_cover left_radius">
             <a th:attr="title=${post.spec.title}" th:href="@{${post.status.permalink}}">
-                <img class="post_bg entered loaded" loading="lazy"
+                <img class="post_bg"
+                     th:with='img = ${#strings.isEmpty(post.spec.cover) ? postRandomImg+post.spec.title : post.spec.cover}'
                      th:alt="${post.spec.title}"
-                     th:src='${#strings.isEmpty(post.spec.cover) ? postRandomImg+","+post.spec.title : post.spec.cover}'>
+                     th:data-lazy-src="${ isLazyload ? img : ''}"
+                     th:src="${isLazyload ? loadingImg : img}">
             </a>
         </div>
-        <!-- 类别非空时 -->
-        <th:block th:if="${not #lists.isEmpty(post.categories)}">
-            <span class="article-meta__categories">
-                <a class="article-meta__category"
-                   th:each="category : ${post.categories}"
-                   th:href="@{${category.status.permalink}}"
-                   th:text="${category.spec.displayName}"
-                   th:title="${category.spec.displayName}">
-                </a>
-            </span>
-        </th:block>
         <div class="recent-post-info">
             <div class="recent-post-info-top">
-                <span class="pinned-post" th:if="${post.spec.pinned}">置顶</span>
+                <div class="recent-post-info-top-tips">
+                    <span class="sticky-warp sticky" th:if="${post.spec.pinned}">置顶</span></span>
+                    <!-- 类别非空时 -->
+                    <th:block th:if="${not #lists.isEmpty(post.categories)}">
+                        <span th:each="category : ${post.categories}" th:href="@{${category.status.permalink}}"
+                              th:text="${category.spec.displayName}" th:title="${category.spec.displayName}"
+                              class="original"></span>
+                    </th:block>
+                    <!--                    <span class="lastestpost">最新</span>-->
+                    <a class="unvisited-post" th:href="@{${post.status.permalink}}" th:title="${post.spec.title}"
+                       data-pjax-state="">未读</a>
+                </div>
                 <a class="article-title"
                    th:attr="title=${post.spec.title}"
                    th:href="@{${post.status.permalink}}"
                    th:text="${post.spec.title}">
                 </a>
-                <div class="content" th:if="${theme.config.post.summarize}" th:text="${post.status.excerpt}"></div>
+                <div class="content" th:text="${post.status.excerpt}"></div>
             </div>
 
 
@@ -102,7 +104,7 @@
     </div>
 
     <!-- 分页 -->
-    <div th:replace="~{modules/widgets/page :: page('',${posts})}"></div>
+    <div th:replace="~{modules/widgets/page :: page('',${posts},true,'')}"></div>
 
 </th:block>
 

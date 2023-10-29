@@ -5,7 +5,8 @@ let heo_cookiesTime = null
 ,heo_musicPlaying = false
 ,heo_keyboard = false
 ,heo_intype = false
-,lastSayHello = "";
+,lastSayHello = ""
+,refreshNum = 1;
 // 私有函数
 var heo = {
     // 检测显示模式
@@ -18,25 +19,15 @@ var heo = {
         }
     },
 
-    // //bb添加时间
-    // changeTimeInEssay: function () {
-    //     const relativeDate = function (selector) {
-    //         selector.forEach(item => {
-    //             const $this = item
-    //             const timeVal = $this.getAttribute('datetime')
-    //             $this.innerText = btf.diffDate(timeVal, true)
-    //             $this.style.display = 'inline'
-    //         })
-    //     }
-    //
-    //     if (document.querySelector('#comment')) {
-    //         relativeDate(document.querySelectorAll('#comment time'))
-    //     }
-    // },
-
     // 首页bb
     initIndexEssay: function() {
         if (document.querySelector("#bber-talk"))
+            $(".swiper-wrapper .swiper-slide").each(function () {
+                var text = $(this)[0].innerText;
+                if (text != 'undefined') {
+                    $(this).text(btf.changeContent(text));
+                }
+            })
             new Swiper(".swiper-container",{
                 direction: "vertical",
                 loop: !0,
@@ -62,7 +53,7 @@ var heo = {
     //是否在首页
     is_Post: function () {
         var url = window.location.href;  //获取url
-        if (url.indexOf("/p/") >= 0) { //判断url地址中是否包含code字符串
+        if (url.indexOf("/archives/") >= 0) { //判断url地址中是否包含code字符串
             return true;
         } else {
             return false;
@@ -81,73 +72,78 @@ var heo = {
             $("#cookies-window").hide())
     },
 
-    // 标签页面
-    //分类条
-    // tagPageActive: function () {
-    //     var urlinfo = window.location.pathname;
-    //     urlinfo = decodeURIComponent(urlinfo)
-    //     // console.log(urlinfo);
-    //     // 验证是否是分类链接
-    //     var pattern = /\/tags\/.*?\//;
-    //     var patbool = pattern.test(urlinfo);
-    //     // console.log(patbool);
-    //     // 获取当前的分类
-    //     if (patbool) {
-    //         var valuegroup = urlinfo.split("/");
-    //         // console.log(valuegroup[2]);
-    //         // 获取当前分类
-    //         var nowCategorie = valuegroup[2];
-    //         if (document.querySelector('#tag-page-tags')) {
-    //             $('a').removeClass('select')
-    //             document.getElementById(nowCategorie).classList.add("select");
-    //         }
-    //     }
-    // },
+    tagPageActive: function() {
+        var e = window.location.pathname;
+        if (/\/tags\/.*?/.test(e = decodeURIComponent(e))) {
+            var t = e.split("/")[2];
+            if (document.querySelector("#tag-page-tags")) {
+                $("a").removeClass("select");
+                var o = document.getElementById(t);
+                o && (o.classList.add("select"),
+                    o.style.order = "-1")
+            }
+        }
+    },
 
-    //分类条
-    // categoriesBarActive: function () {
-    //     if (document.querySelector('#category-bar')) {
-    //         $(".category-bar-item").removeClass("select")
-    //     }
-    //     var urlinfo = window.location.pathname;
-    //     urlinfo = decodeURIComponent(urlinfo);
-    //     // console.log(urlinfo);
-    //     //判断是否是首页
-    //     if (urlinfo == '/') {
-    //         if (document.querySelector('#category-bar')) {
-    //             document.getElementById('category-bar-home').classList.add("select");
-    //         }
-    //     } else {
-    //         // 验证是否是分类链接
-    //         var pattern = /\/categories\/.*?\//;
-    //         var patbool = pattern.test(urlinfo);
-    //         // console.log(patbool);
-    //         // 获取当前的分类
-    //         if (patbool) {
-    //             var valuegroup = urlinfo.split("/");
-    //             // console.log(valuegroup[2]);
-    //             // 获取当前分类
-    //             var nowCategorie = valuegroup[2];
-    //             if (document.querySelector('#category-bar')) {
-    //                 document.getElementById(nowCategorie).classList.add("select");
-    //             }
-    //         }
-    //     }
-    // },
+    categoriesBarActive: function() {
+        document.querySelector("#category-bar") && $(".category-bar-item").removeClass("select");
+        var e = window.location.pathname;
+        if ("/" == (e = decodeURIComponent(e)))
+            document.querySelector("#category-bar") && document.getElementById("category-bar-home").classList.add("select");
+        else {
+            if (/\/categories\/.*?/.test(e)) {
+                var t = e.split("/")[2];
+                if (document.querySelector("#category-bar")) {
+                    var o = document.getElementById(t);
+                    o && (o.classList.add("select"),
+                        o.style.order = "-1")
+                }
+            }
+        }
+    },
 
     // 页脚友链
     addFriendLinksInFooter: function () {
-        const linksUrl = GLOBAL_CONFIG.source.links.linksUrl
-        const links = GLOBAL_CONFIG.source.links.linksData
-        const num = GLOBAL_CONFIG.source.links.linksNum
-        var randomFriendLinks = getArrayItems(links, num);
-        var htmlText = '';
-        for (let i = 0; i < randomFriendLinks.length; ++i) {
-            var item = randomFriendLinks[i]
-            htmlText += `<a class='footer-item' href='${item.spec.url}'  target="_blank" rel="noopener nofollow">${item.spec.displayName}</a>`;
+        var footerRandomFriendsBtn = document.getElementById("footer-random-friends-btn");
+        if(!footerRandomFriendsBtn) return;
+        footerRandomFriendsBtn.style.opacity = "0.2";
+        footerRandomFriendsBtn.style.transitionDuration = "0.3s";
+        footerRandomFriendsBtn.style.transform = "rotate(" + 360 * refreshNum++ + "deg)";
+        function getLinks(){
+            const fetchUrl = "/apis/api.plugin.halo.run/v1alpha1/plugins/PluginLinks/links?keyword=&sort=priority,asc"
+            fetch(fetchUrl)
+                .then(res => res.json())
+                .then(json => {
+                    saveToLocal.set('links-data', JSON.stringify(json.items), 10 / (60 * 24))
+                    renderer(json.items);
+                })
         }
-        htmlText += `<a class='footer-item' href='${linksUrl}'>更多</a>`
-        document.getElementById("friend-links-in-footer").innerHTML = htmlText;
+        function renderer(data){
+            const linksUrl = GLOBAL_CONFIG.source.links.linksUrl
+            const num = GLOBAL_CONFIG.source.links.linksNum
+            var randomFriendLinks = getArrayItems(data, num);
+            var htmlText = '';
+            for (let i = 0; i < randomFriendLinks.length; ++i) {
+                var item = randomFriendLinks[i]
+                htmlText += `<a class='footer-item' href='${item.spec.url}'  target="_blank" rel="noopener nofollow">${item.spec.displayName}</a>`;
+            }
+            htmlText += `<a class='footer-item' href='${linksUrl}'>更多</a>`
+            if(document.getElementById("friend-links-in-footer")){
+                document.getElementById("friend-links-in-footer").innerHTML = htmlText;
+            }
+        }
+        function friendLinksInFooterInit(){
+            const data = saveToLocal.get('links-data')
+            if (data) {
+                renderer(JSON.parse(data))
+            } else {
+                getLinks()
+            }
+            setTimeout(()=>{
+                footerRandomFriendsBtn.style.opacity = "1";
+            }, 300)
+        }
+        friendLinksInFooterInit();
     },
 
     //禁止图片右键单击
@@ -201,18 +197,6 @@ var heo = {
 
     },
 
-    // 添加标签
-    addTag: function () {
-        //添加new标签
-        if (document.querySelector('.heo-tag-new')) {
-            $(".heo-tag-new").append(`<sup class="heo-tag heo-tag-new-view">N</sup>`)
-        }
-        //添加hot标签
-        if (document.querySelector('.heo-tag-hot')) {
-            $(".heo-tag-hot").append(`<sup class="heo-tag heo-tag-hot-view">H</sup>`)
-        }
-    },
-
     // 二维码
     qrcodeCreate: function () {
         if (document.getElementById('qrcode')) {
@@ -232,16 +216,9 @@ var heo = {
     reflashEssayWaterFall: function() {
         document.querySelector("#waterfall") && setTimeout((function() {
                 waterfall("#waterfall"),
-                    document.getElementById("waterfall").classList.add("show")
+                    document.getElementById("waterfall") && document.getElementById("waterfall").classList.add("show")
             }
         ), 500)
-    },
-
-    // 即刻短文添加灯箱
-    addMediumInEssay: function () {
-        if (document.querySelector('#waterfall')) {
-            mediumZoom(document.querySelectorAll('[data-zoomable]'))
-        }
     },
 
     // 下载图片
@@ -473,9 +450,23 @@ var heo = {
     },
 
     //滚动到指定id
-    scrollTo: function (id) {
-        var domTop = document.querySelector(id).offsetTop;
-        window.scrollTo(0, domTop - 80);
+    scrollTo: function(e) {
+        const t = document.getElementById(e);
+        if (t) {
+            const e = t.getBoundingClientRect().top + window.pageYOffset - 80
+                , o = window.pageYOffset
+                , n = e - o;
+            let a = null;
+            window.requestAnimationFrame((function e(t) {
+                    a || (a = t);
+                    const l = t - a
+                        , i = (c = Math.min(l / 0, 1)) < .5 ? 2 * c * c : (4 - 2 * c) * c - 1;
+                    var c;
+                    window.scrollTo(0, o + n * i),
+                    l < 600 && window.requestAnimationFrame(e)
+                }
+            ))
+        }
     },
 
     //隐藏侧边栏
@@ -487,17 +478,135 @@ var heo = {
         $htmlDom.toggle('hide-aside')
         $htmlDom.contains("hide-aside") ? document.querySelector("#consoleHideAside").classList.add("on") : document.querySelector("#consoleHideAside").classList.remove("on")
     },
+    toPage: function() {
+        var e = document.querySelectorAll(".page-number")
+            , t = parseInt(e[e.length - 1].innerHTML)
+            , o = document.getElementById("toPageText")
+            , n = parseInt(o.value);
+        if (!isNaN(n) && n > 0 && "0" !== ("" + n)[0] && n <= t) {
+            var url = window.location.href;
 
+            var photosIndexOf = url.indexOf("?group") >= 0 ? url.indexOf("?group") : -1;
+            if (photosIndexOf >= 0) {//图库页面
+                var new_url = url.substr(0,photosIndexOf);
+                var group = url.substr(photosIndexOf)
+                var a, l = new_url.replace(/\/page\/\d$/, "");
+                a = 1 === n ? l : l + (l.endsWith("/") ? "" : "/") + "page/" + n,
+                    document.getElementById("toPageButton").href = a + group
+            }else{
+                var a, l = url.replace(/\/page\/\d$/, "");
+                a = 1 === n ? l : l + (l.endsWith("/") ? "" : "/") + "page/" + n,
+                    document.getElementById("toPageButton").href = a
+            }
+            //首页有第一屏就跳转指定位置
+            scrollToPost();
+
+        }
+    },
     changeSayHelloText: function() {
-        const e = GLOBAL_CONFIG.helloText.length == 0 ? ["🤖️ 数码科技爱好者", "🔍 分享与热心帮助", "🏠 智能家居小能手", "🔨 设计开发一条龙", "🤝 专修交互与设计", "🏃 脚踏实地行动派", "🧱 团队小组发动机", "💢 壮汉人狠话不多"] : GLOBAL_CONFIG.helloText
-            , t = document.getElementById("author-info__sayhi");
-        let o = e[Math.floor(Math.random() * e.length)];
-        for (; o === lastSayHello; )
-            o = e[Math.floor(Math.random() * e.length)];
-        t.textContent = o,
-            lastSayHello = o
+        const greetings = GLOBAL_CONFIG.helloText.length == 0 ? ["🤖️ 数码科技爱好者", "🔍 分享与热心帮助", "🏠 智能家居小能手", "🔨 设计开发一条龙", "🤝 专修交互与设计", "🏃 脚踏实地行动派", "🧱 团队小组发动机", "💢 壮汉人狠话不多"] : GLOBAL_CONFIG.helloText
+            , authorInfoSayHiElement = document.getElementById("author-info__sayhi");
+        // 如果只有一个问候语，设置为默认值
+        if (greetings.length === 1) {
+            authorInfoSayHiElement.textContent = greetings[0];
+            return;
+        }
+        let randomGreeting = greetings[Math.floor(Math.random() * greetings.length)];
+        for (; randomGreeting === lastSayHello; )
+            randomGreeting = greetings[Math.floor(Math.random() * greetings.length)];
+        authorInfoSayHiElement.textContent = randomGreeting,
+            lastSayHello = randomGreeting
     },
 
+    //匿名评论
+    addRandomCommentInfo: function () {
+        // 从形容词数组中随机取一个值
+        const randomAdjective = adjectives[Math.floor(Math.random() * adjectives.length)];
+
+        // 从蔬菜水果动物名字数组中随机取一个值
+        const randomName = vegetablesAndFruits[Math.floor(Math.random() * vegetablesAndFruits.length)];
+
+        // 将两个值组合成一个字符串
+        const name = `${randomAdjective}${randomName}`;
+
+        function dr_js_autofill_commentinfos() {
+            var lauthor = [
+                    "#author",
+                    "input[name='comname']",
+                    "#inpName",
+                    "input[name='author']",
+                    "#ds-dialog-name",
+                    "#name",
+                    "input[name='nick']",
+                    "#comment_author",
+                ],
+                lmail = [
+                    "#mail",
+                    "#email",
+                    "input[name='commail']",
+                    "#inpEmail",
+                    "input[name='email']",
+                    "#ds-dialog-email",
+                    "input[name='mail']",
+                    "#comment_email",
+                ],
+                lurl = [
+                    "#url",
+                    "input[name='comurl']",
+                    "#inpHomePage",
+                    "#ds-dialog-url",
+                    "input[name='url']",
+                    "input[name='website']",
+                    "#website",
+                    "input[name='link']",
+                    "#comment_url",
+                ];
+            for (var i = 0; i < lauthor.length; i++) {
+                var author = document.querySelector(lauthor[i]);
+                if (author != null) {
+                    author.value = name;
+                    author.dispatchEvent(new Event("input"));
+                    author.dispatchEvent(new Event("change"));
+                    break;
+                }
+            }
+            for (var j = 0; j < lmail.length; j++) {
+                var mail = document.querySelector(lmail[j]);
+                if (mail != null) {
+                    mail.value = visitorMail;
+                    mail.dispatchEvent(new Event("input"));
+                    mail.dispatchEvent(new Event("change"));
+                    break;
+                }
+            }
+            return !1;
+        }
+        dr_js_autofill_commentinfos();
+        var input = document.getElementsByClassName(GLOBAL_CONFIG.source.comments.textarea)[0];
+        input.focus();
+        input.setSelectionRange(-1, -1);
+    },
+
+    //爱发电赞助
+    addPowerLinksInPostRightSide: async function() {
+        const image = document.getElementById("power-star-image")
+            , star = document.getElementById("power-star")
+            , title = document.getElementById("power-star-title")
+            , desc = document.getElementById("power-star-desc");
+        if (image && star && title && desc)
+            try {
+                const list = GLOBAL_CONFIG.source.power.list
+                    , i = heo.getRandomInt(0, list.length)
+                    , power = list[i].realNode;
+                image.style.backgroundImage = `url(${power.avatar})`,
+                    star.href = power.link,
+                    title.innerText = power.name,
+                    desc.innerText = power.descr
+            } catch (e) {}
+    },
+    getRandomInt: function(e, t) {
+        return Math.floor(Math.random() * (t - e)) + e
+    },
 
     //初始化console图标
     initConsoleState: function() {
@@ -560,11 +669,17 @@ var heo = {
     },
 
 };
+const adjectives = ["美丽的", "英俊的", "聪明的", "勇敢的", "可爱的", "慷慨的", "善良的", "可靠的", "开朗的", "成熟的", "稳重的", "真诚的", "幽默的", "豁达的", "有趣的", "活泼的", "优雅的", "敏捷的", "温柔的", "温暖的", "敬业的", "细心的", "耐心的", "深沉的", "朴素的", "含蓄的", "率直的", "开放的", "务实的", "坚强的", "自信的", "谦虚的", "文静的", "深刻的", "纯真的", "朝气蓬勃的", "慎重的", "大方的", "顽强的", "迷人的", "机智的", "善解人意的", "富有想象力的", "有魅力的", "独立的", "好奇的", "干净的", "宽容的", "尊重他人的", "体贴的", "守信的", "有耐性的", "有责任心的", "有担当的", "有远见的", "有智慧的", "有眼光的", "有冒险精神的", "有爱心的", "有同情心的", "喜欢思考的", "喜欢学习的", "具有批判性思维的", "善于表达的", "善于沟通的", "善于合作的", "善于领导的", "有激情的", "有幽默感的", "有思想的", "有个性的", "有正义感的", "有责任感的", "有创造力的", "有想象力的", "有艺术细胞的", "有团队精神的", "有协调能力的", "有决策能力的", "有组织能力的", "有学习能力的", "有执行能力的", "有分析能力的", "有逻辑思维的", "有创新能力的", "有专业素养的", "有商业头脑的"]
+    , vegetablesAndFruits = ["萝卜", "白菜", "芹菜", "生菜", "青椒", "辣椒", "茄子", "豆角", "黄瓜", "西红柿", "洋葱", "大蒜", "土豆", "南瓜", "豆腐", "韭菜", "花菜", "西兰花", "蘑菇", "金针菇", "苹果", "香蕉", "橙子", "柠檬", "猕猴桃", "草莓", "葡萄", "桃子", "杏子", "李子", "石榴", "西瓜", "哈密瓜", "蜜瓜", "樱桃", "蓝莓", "柿子", "橄榄", "柚子", "火龙果"];
 $(document).ready((function() {
         initBlog()
     }
 )),
 document.addEventListener("pjax:complete", (function() {
-         initBlog()
+        initBlog();
+        // 解决 katex pjax问题
+        if((GLOBAL_CONFIG.htmlType == 'post' || GLOBAL_CONFIG.htmlType == 'page') && typeof window.renderKaTex != 'undefined'){
+            window.renderKaTex();
+        }
      }
 ));

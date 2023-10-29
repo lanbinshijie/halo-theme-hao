@@ -1,19 +1,25 @@
 <!DOCTYPE html>
-<html lang="en" th:replace="~{modules/layouts/layout :: layout(content = ~{::content}, htmlType = 'archive')}"
-      xmlns:th="http://www.thymeleaf.org">
-
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{modules/layouts/layout :: layout(content = ~{::content}, htmlType = 'archive',title = ${'文章归档' + ' | ' + site.title}, head = ~{::head})}">
+<th:block th:fragment="head">
+    <th:block th:replace="~{modules/common/open-graph :: open-graph(_title = '文章归档',
+                _permalink = '/archives',
+                _cover = ${theme.config.other.opengraph.image},
+                _excerpt = ${site.seo.description},
+                _type = 'website')}"></th:block>
+</th:block>
 <th:block th:fragment="content">
 
     <div class="page" id="body-wrap">
         <header class="not-top-img" id="page-header">
-            <nav th:replace="~{modules/nav :: nav(title = null)}"></nav>
+            <nav th:replace="~{modules/nav :: nav(title = '文章归档')}"></nav>
         </header>
         <main class="layout" id="content-inner">
             <!-- archive -->
             <div id="archive">
-                <div class="article-sort-title">文章 - [[${siteStatsFinder.getStats().post}]]</div>
+                <div class="article-sort-title">文章<sup>[[${siteStatsFinder.getStats().post}]]</sup></div>
                 <div class="article-sort" th:each="archive : ${archives.items}"
-                     th:with='postRandomImg=${#strings.contains(theme.config.layout.postRandomImg,"?") ? theme.config.layout.postRandomImg+"," : theme.config.layout.postRandomImg+"?"}'>
+                     th:with='postRandomImg=${#strings.contains(theme.config.layout.postRandomImg,"?") ? theme.config.layout.postRandomImg+"&" : theme.config.layout.postRandomImg+"?"}'>
                     <div class="article-sort-item year" th:text="${archive.year}"></div>
                     <div class="article-sort" th:each="month : ${archive.months}">
                         <!-- 月份没有样式所以不显示 -->
@@ -47,7 +53,7 @@
                     </div>
                 </div>
                 <!-- 分页 -->
-                <div th:replace="~{modules/widgets/page :: page('/archives',${archives})}"></div>
+                <div th:replace="~{modules/widgets/page :: page('/archives',${archives},false,'')}"></div>
             </div>
             <!-- sidebar -->
             <div th:replace="~{modules/aside :: aside(${theme.config.sidebar.widgetss.categoryWidgets})}"></div>

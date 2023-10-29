@@ -1,12 +1,18 @@
 <!DOCTYPE html>
-<html lang="en" th:replace="~{modules/layouts/layout :: layout(content = ~{::content}, htmlType = 'tag')}"
-      xmlns:th="http://www.thymeleaf.org">
-
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{modules/layouts/layout :: layout(content = ~{::content}, htmlType = 'tag',title = ${'标签' + ': ' + tag.spec.displayName + ' | ' + site.title}, head = ~{::head})}">
+<th:block th:fragment="head">
+    <th:block th:replace="~{modules/common/open-graph :: open-graph(_title = ${tag.spec.displayName},
+                _permalink = ${tag.status.permalink},
+                _cover = ${tag.spec.cover},
+                _excerpt = ${site.seo.description},
+                _type = 'website')}"></th:block>
+</th:block>
 <th:block th:fragment="content">
 
     <div class="page" id="body-wrap">
         <header class="not-top-img" id="page-header">
-            <nav th:replace="~{modules/nav :: nav(title = null)}"></nav>
+            <nav th:replace="~{modules/nav :: nav(title = ${'标签'+ ': ' + tag.spec.displayName})}"></nav>
         </header>
         <main class="layout" id="content-inner">
             <div id="tag">
@@ -15,43 +21,13 @@
                        th:classappend="${tag.metadata.name == tagItem.metadata.name} ? 'select'"
                        th:each="tagItem : ${tags}"
                        th:href="@{${tagItem.status.permalink}}"
-                       th:id="${tagItem.spec.displayName}">
+                       th:id="${tagItem.spec.slug}">
                         <span class="tags-punctuation">[[${tagItem.spec.displayName}]]</span>
                         <span class="tagsPageCount" th:text="${tagItem.status.visiblePostCount}"></span>
                     </a>
                 </div>
-                <div class="article-sort-title" th:text="${tag.spec.displayName}"></div>
-                <div class="article-sort" th:with="postItems=${posts.items}">
-                    <!--<div class="article-sort-item year">2022</div>-->
-                    <div class="article-sort-item" th:each="post : ${postItems}"
-                         th:with='postRandomImg=${#strings.contains(theme.config.layout.postRandomImg,"?") ? theme.config.layout.postRandomImg+"," : theme.config.layout.postRandomImg+"?"}'>
-                        <a class="article-sort-item-img" th:href="@{${post.status.permalink}}"
-                           th:title="${post.spec.title}">
-                            <img loading="lazy" th:alt="${post.status.excerpt}"
-                                 th:src="${#strings.isEmpty(post.spec.cover) ? postRandomImg+post.spec.title : post.spec.cover}">
-                        </a>
-                        <div class="article-sort-item-info">
-                            <div class="article-sort-item-time"><i class="far fa-calendar-alt"></i>
-                                <time th:text="${#dates.format(post.spec.publishTime,'yyyy-MM-dd')}"
-                                      th:title="${#dates.format(post.spec.publishTime,'yyyy-MM-dd')}">
-                                </time>
-                            </div>
-                            <a class="article-sort-item-title" onclick="window.event.cancelBubble=!0"
-                               th:href="@{${post.status.permalink}}"
-                               th:text="${post.spec.title}" th:title="${post.spec.title}">
-                            </a>
-                            <div class="article-sort-item-tags">
-                                <a class="article-meta__tags" event.cancelbubble onclick="window.event.cancelBubble=!0"
-                                   th:each="tag : ${post.tags}" th:href="@{${tag.status.permalink}}">
-                                    <span class="tags-punctuation">[[${tag.spec.displayName}]]</span>
-                                </a>
-                                <span class="article-meta__link">•</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <!-- 分页 -->
-                <div th:replace="~{modules/widgets/page :: page(${'/tags/'+tag.spec.slug},${posts})}"></div>
+                <!-- 文章 -->
+                <th:block th:replace="~{macro/post-list :: post-list(${'/tags/'+tag.spec.slug})}" />
             </div>
             <!-- sidebar -->
             <div th:replace="~{modules/aside :: aside(${theme.config.sidebar.widgetss.tagWidgets})}"></div>

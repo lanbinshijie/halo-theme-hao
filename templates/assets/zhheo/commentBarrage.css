@@ -1,7 +1,7 @@
 .comment-barrage {
     position: fixed;
     bottom: 0;
-    right: 20px;
+    right: 60px;
     padding: 0 0 20px 10px;
     z-index: 100;
     display: flex;
@@ -37,9 +37,9 @@
     border: var(--style-border);
     backdrop-filter: saturate(180%) blur(20px);
     -webkit-backdrop-filter: blur(20px);
+    transform: translateZ(0);
     position: fixed;
     box-shadow: var(--heo-shadow-border);
-    overflow: hidden;
 }
 
 .comment-barrage-item:hover {
@@ -64,12 +64,19 @@
 }
 
 .comment-barrage-item .comment-barrage-close:hover {
-    color: var(--heo-main);
+    color: var(--heo-lighttext);
 }
 
-.comment-barrage-item .comment-barrage-close .heofont {
+.comment-barrage-item .comment-barrage-close .haofont {
+    color: var(--heo-fontcolor);
+    transition: all 0.3s ease 0s;
     font-size: 18px !important;
 }
+
+.comment-barrage-item .comment-barrage-close:hover .haofont {
+    color: var(--heo-lighttext);
+}
+
 
 .comment-barrage-item pre {
     display: none;
@@ -118,7 +125,6 @@
     line-height: 1;
     padding: 4px;
     border-radius: 4px;
-    white-space: nowrap;
 }
 
 .comment-barrage-item .barrageHead .barrageTitle:hover {
@@ -140,9 +146,8 @@
     font-size: 14px !important;
     font-weight: normal !important;
     height: calc(100% - 30px);
-    overflow: hidden;
-    width: fit-content;
-    max-height: 48px;
+    overflow: scroll;
+    cursor: pointer
 }
 
 .comment-barrage-item .barrageContent a {

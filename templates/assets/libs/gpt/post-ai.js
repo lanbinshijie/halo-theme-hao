@@ -1,5 +1,12 @@
 (function () {
 
+    // 获取挂载元素，即文章内容所在的容器元素
+    let targetElement = document.querySelector('#post #article-container');
+    // 若el配置不存在则自动获取，如果auto_mount配置为真也自动获取
+    if (!targetElement) {
+        return;
+    };
+
     let ai =  GLOBAL_CONFIG.source.postAi.ai;
     let randomNum = GLOBAL_CONFIG.source.postAi.randomNum; //按钮最大的随机次数，也就是一篇文章最大随机出来几种
     let basicWordCount = GLOBAL_CONFIG.source.postAi.basicWordCount; // 最低获取字符数, 最小1000, 最大1999
@@ -9,6 +16,44 @@
     let switchBtn = GLOBAL_CONFIG.source.postAi.switchBtn //# 可以配置是否显示切换按钮 以切换tianli/local
     let keys = GLOBAL_CONFIG.source.postAi.keys;
     let Referers = GLOBAL_CONFIG.source.postAi.Referers;
+
+    // let post = document.querySelector('#post')
+    // const interface = {
+    //     name: "AI-摘要",
+    //     aiToggle: "切换",
+    //     version: "Tianli GPT",
+    //     button: ["介绍自己", "生成本文简介", "推荐相关文章", "前往主页"],
+    // }
+    // // 插入html结构
+    // const post_ai_box = document.createElement('div');
+    // post_ai_box.className = 'post-ai';
+    // post.insertBefore(post_ai_box, post.firstChild);
+    //
+    // var PostAI = `
+    // <div class="ai-title">
+    // <i class="haofont hao-icon-bilibili"></i>
+    // <div class="ai-title-text">${interface.name}</div>`
+    // if (switchBtn) {
+    //     PostAI += `<div  id="ai-Toggle">${interface.aiToggle}</div> `;
+    // }
+    // PostAI += `<i class="haofont hao-icon-arrow-rotate-right"></i> `;
+    // if (modeName == 'local') {
+    //     PostAI += `<div class="ai-tag" id="ai-tag">${gptName} GPT</div>`;
+    // } else {
+    //     PostAI += `<div class="ai-tag" id="ai-tag">${interface.version}</div>     `;
+    // }
+    // PostAI += `
+    // </div>
+    // <div class="ai-explanation" style="display: block;">AI初始化中...</div>
+    // <div class="ai-btn-box">
+    //   <div class="ai-btn-item">${interface.button[0]}</div>
+    //   <div class="ai-btn-item">${interface.button[1]}</div>
+    //   <div class="ai-btn-item">${interface.button[2]}</div>
+    //   <div class="ai-btn-item">${interface.button[3]}</div>
+    //   <div class="ai-btn-item" id="go-tianli-blog">前往tianli博客</div>
+    // </div>`;
+    //
+    // post_ai_box.innerHTML = PostAI;
 
     // 当前随机到的ai摘要到index
     let lastAiRandomIndex = -1;
@@ -119,14 +164,19 @@
                 Referer: Referers
             };
 
-            const truncateDescription =  getTitleAndContent(num);
-            const queryParams = `key=${options.key}&content=${truncateDescription}`;
+            const truncateDescription = getTitleAndContent(num);
+            const requestBody = {
+                key: options.key,
+                content: truncateDescription,
+                url: location.href,
+            };
             const requestOptions = {
-                method: "GET",
+                method: "POST",
                 headers: {
                     "Content-Type": "application/json",
                     Referer: options.Referer
                 },
+                body: JSON.stringify(requestBody),
             };
             try {
                 let animationInterval = null
@@ -136,7 +186,7 @@
                     explanation.innerHTML = animationText;
                     j = (j % 3) + 1; // 在 1、2、3 之间循环
                 }, 500);
-                const response = await fetch(`https://summary.tianli0.top/?${queryParams}`, requestOptions);
+                const response = await fetch(`https://summary.tianli0.top/`, requestOptions);
                 let result;
                 if (response.status === 403) {
                     result = {
@@ -153,11 +203,16 @@
                 setTimeout(() => {
                     aiTitleRefreshIcon.style.opacity = "1";
                 }, 300)
-                startAI(summary);
+                if (summary) {
+                    startAI(summary);
+                } else {
+                    startAI("摘要获取失败!!!请检查Tianli服务是否正常!!!");
+                }
                 clearInterval(animationInterval)
 
             } catch (error) {
                 console.error(error);
+                explanation.innerHTML = "发生异常" + error;
             }
         } else {
             const strArr = ai.split(",").map(item => item.trim()); // 将字符串转换为数组，去除每个字符串前后的空格
@@ -192,12 +247,12 @@
         }, 600);
     }
     function aiGoHome() {
-        startAI("正在前往博客主页...", false);
+        startAI("前往爱发电购买...", false);
         sto[2] = setTimeout(() => {
             pjax.loadUrl("/");
         }, 1000);
     }
-    const ai_btn_item = document.querySelectorAll(".ai-btn-item");
+
     function Introduce() {
         if (mode == "tianli") {
             startAI("我是文章辅助AI: TianliGPT，点击下方的按钮，让我生成本文简介、推荐相关文章等。")
@@ -208,8 +263,10 @@
     function aiTitleRefreshIconClick() {
         aiTitleRefreshIcon.click()
     }
+    const aiBtnList = document.querySelectorAll(".ai-btn-item");
     const aiFunctions = [Introduce, aiTitleRefreshIconClick, aiRecommend, aiGoHome];
-    ai_btn_item.forEach((item, index) => {
+    const filteredHeadings = Array.from(aiBtnList).filter(heading => heading.id !== "go-tianli-blog");
+    filteredHeadings.forEach((item, index) => {
         item.addEventListener("click", () => {
             aiFunctions[index]();
         });
@@ -217,27 +274,35 @@
 
     function recommendList() {
         let thumbnail = document.querySelectorAll('.relatedPosts-list a');
+        var title = document.title;
+        let list = '';
+        let index = 0;
         if (!thumbnail.length) {
             const cardRecentPost = document.querySelector('.card-widget.card-recent-post');
             if (!cardRecentPost) return '';
 
             thumbnail = cardRecentPost.querySelectorAll('.aside-list-item a');
 
-            let list = '';
-            for (let i = 0; i < thumbnail.length; i++) {
-                const item = thumbnail[i];
-                list += `<div class="ai-recommend-item"><span class="index">${i + 1}：</span><a href="javascript:;" onclick="pjax.loadUrl('${item.href}')" title="${item.title}" data-pjax-state="">${item.title}</a></div>`;
+            if(thumbnail.length>0){
+                thumbnail.forEach(item => {
+                    if (item) {
+                        if(!title.includes(item.title)){
+                            index +=1;
+                            list += `<div class="ai-recommend-item"><span class="index">${i + 1}：</span><a href="javascript:;" onclick="pjax.loadUrl('${item.href}')" title="${item.title}" data-pjax-state="">${item.title}</a></div>`;
+                        }
+                    }
+                });
             }
-
             return `很抱歉，无法找到类似的文章，你也可以看看本站最新发布的文章：<br /><div class="ai-recommend">${list}</div>`;
         }
-
-        let list = '';
-        for (let i = 0; i < thumbnail.length; i++) {
-            const item = thumbnail[i];
-            list += `<div class="ai-recommend-item"><span>推荐${i + 1}：</span><a href="javascript:;" onclick="pjax.loadUrl('${item.href}')" title="${item.title}" data-pjax-state="">${item.title}</a></div>`;
-        }
-
+        thumbnail.forEach(item => {
+            if (item) {
+                if(!title.includes(item.title)){
+                    index +=1;
+                    list += `<div class="ai-recommend-item"><span>推荐${index}：</span><a href="javascript:;" onclick="pjax.loadUrl('${item.href}')" title="${item.title}" data-pjax-state="">${item.title}</a></div>`;
+                }
+            }
+        });
         return `推荐文章：<br /><div class="ai-recommend">${list}</div>`;
     }
 
@@ -246,6 +311,10 @@
         if (mode === "tianli") {
             mode = "local";
             document.getElementById("ai-tag").innerHTML = gptName + " GPT";
+            if ((document.getElementById("go-tianli-blog").style.display = "block")) {
+                document.querySelectorAll(".ai-btn-item").forEach(item => (item.style.display = "block"));
+                document.getElementById("go-tianli-blog").style.display = "none";
+            }
             aiAbstract(basicWordCount);
         } else {
             mode = "tianli";
@@ -370,5 +439,5 @@
     }
 
     aiAbstract();
-    showAiBtn()
+    showAiBtn();
 })()

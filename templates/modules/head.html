@@ -1,27 +1,24 @@
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 <!-- 公共的 head 部分，可以定义部分 links,scripts,styles -->
-<head th:fragment="head(htmlType)">
+<th:block th:fragment="head(htmlType)">
     <meta charset="UTF-8">
     <meta content="IE=edge" http-equiv="X-UA-Compatible">
     <meta content="width=device-width,initial-scale=1" name="viewport">
-    <title th:text="${site.title}"></title>
     <meta content="telephone=no" name="format-detection">
     <meta content="var(--heo-card-bg)" name="theme-color">
-
+    <title th:text="${siteTitle}"></title>
     <link rel="shortcut icon"
           th:href="@{${#strings.isEmpty(site.favicon) ? assets_link + '/images/hao-logo.jpg' : site.favicon}}"/>
     <script src="https://lf6-cdn-tos.bytecdntp.com/cdn/expire-1-M/jquery/3.6.0/jquery.min.js"></script>
 
     <script th:src="${assets_link + '/js/heo.js' + theme_version}"></script>
 
-    <script th:src="${assets_link + '/js/halo.js' + theme_version}"></script>
-
     <link rel="stylesheet" th:href="${assets_link + '/zhheo/zhheoblog.css' + theme_version}">
 
     <link rel="stylesheet" th:href="${assets_link + '/zhheo/custom.css' + theme_version}">
 
-    <link rel="stylesheet" th:href="${assets_link + '/zhheo/commentBarrage.css' + theme_version}">
+    <link rel="stylesheet" th:href="${assets_link + '/zhheo/commentBarrage.css'}">
 
     <style th:if="${theme.config.other.scrollbarLinearGradientEnable}">
         *::-webkit-scrollbar-thumb {
@@ -31,13 +28,8 @@
         }
     </style>
 
-    <link media="print"
-          onload='this.media="all"'
-          rel="stylesheet"
-          th:href="${assets_link + '/libs/iconfont/iconfont.css' + theme_version}">
-
     <!-- swiper 在瞬间滚动时会使用 -->
-    <link rel="stylesheet" href="https://lf6-cdn-tos.bytecdntp.com/cdn/expire-1-M/Swiper/8.0.6/swiper-bundle.min.css"/>
+    <link th:if="${theme.config.top.moment}" rel="stylesheet" href="https://lf6-cdn-tos.bytecdntp.com/cdn/expire-1-M/Swiper/8.0.6/swiper-bundle.min.css"/>
 
     <!-- 右下角通知 -->
     <link href="https://lf3-cdn-tos.bytecdntp.com/cdn/expire-1-M/node-snackbar/0.1.16/snackbar.min.css"
@@ -45,8 +37,6 @@
           onload='this.media="all"'
           rel="stylesheet"
     />
-
-    <link rel="stylesheet" href="https://cdn.staticfile.org/font-awesome/6.2.0/css/all.min.css" media="all" onload="this.media='all'">
 
     <!-- 代码块自动识别语言 -->
     <th:block th:replace="~{modules/common/code :: code}"/>
@@ -101,6 +91,21 @@
                 document.head.appendChild(script)
             })
 
+            win.getCSS = (url,id = false) => new Promise((resolve, reject) => {
+                const link = document.createElement('link')
+                link.rel = 'stylesheet'
+                link.href = url
+                if (id) link.id = id
+                link.onerror = reject
+                link.onload = link.onreadystatechange = function() {
+                    const loadState = this.readyState
+                    if (loadState && loadState !== 'loaded' && loadState !== 'complete') return
+                    link.onload = link.onreadystatechange = null
+                    resolve()
+                }
+                document.head.appendChild(link)
+            })
+
             win.activateDarkMode = function () {
                 document.documentElement.setAttribute('data-theme', 'dark')
                 heo.initThemeColor()
@@ -150,23 +155,16 @@
     </script>
 
     <!-- 动态加载条 -->
-    <script data-pace-options='{ "restartOnRequestAfter":false,"eventLag":false}'
-            th:src="${assets_link + '/libs/pace/pace.min.js' + theme_version}"
+    <script data-pace-options="{ &quot;restartOnRequestAfter&quot;:false,&quot;eventLag&quot;:false}"
+            th:src="${assets_link + '/libs/pace/pace.min.js'}"
             th:if="${theme.config.other.loadingBoxs.loadProgressBar}">
     </script>
 
-    <!-- 复制 https://github.com/zenorocha/clipboard.js -->
-    <script th:src="${assets_link + '/libs/clipboard/clipboard.min.js' + theme_version}"></script>
-
-    <!-- 全局图片预览-->
-    <script src="https://lf6-cdn-tos.bytecdntp.com/cdn/expire-1-M/fancybox/3.5.7/jquery.fancybox.min.js"></script>
-    <link rel="stylesheet" href="https://lf3-cdn-tos.bytecdntp.com/cdn/expire-1-M/fancybox/3.5.7/jquery.fancybox.min.css">
-
-    <!-- 关于地图-->
-    <script src="https://map.qq.com/api/gljs?v=1.exp&key=YZOBZ-34HLF-K3OJV-JV6IN-OALJ5-7MBAC"></script>
+    <!-- 复制 https://githubfast.com/zenorocha/clipboard.js -->
+    <script th:src="${assets_link + '/libs/clipboard/clipboard.min.js'}"></script>
 
     <!-- 关于统计-->
-    <script th:src="${assets_link + '/libs/countup/countup.js' + theme_version}"></script>
+    <script th:if="${#strings.contains(theme.config.about.widgets,'statistics-map')}" th:src="${assets_link + '/libs/countup/countup.js'}"></script>
 
     <!-- 小板报 -->
     <th:block th:if="${not #strings.isEmpty(theme.config.sidebar.welcome.key)}">
@@ -174,177 +172,15 @@
             #strings.contains(theme.config.sidebar.widgetss.postWidgets,'welcome') ||
             #strings.contains(theme.config.sidebar.widgetss.tagWidgets,'welcome') ||
             #strings.contains(theme.config.sidebar.widgetss.categoryWidgets,'welcome')}"
-                th:src="${assets_link + '/libs/welcome/welcome.js' + theme_version}"></script>
+                th:src="${assets_link + '/libs/welcome/welcome.js'}"></script>
     </th:block>
 
     <!-- icon图标 -->
-    <link rel="stylesheet" th:href="'https://npm.onmicrosoft.cn/hao-theme-static@'+${theme.spec.version}+'/icon/iconfont.css'">
+    <link rel="stylesheet" th:href="'https://cdn.cbd.int/hao-theme-static@'+${theme.spec.version}+'/icon/iconfont.css'">
 
-    <!-- 声明一些公共信息 -->
-    <script id="site-config" th:inline="javascript">
-        var GLOBAL_CONFIG = {
-            // 页面类型 index,page,post,tag,category
-            htmlType: [[${ htmlType }]],
-            postTitle: [[${ htmlType == 'post' ? post.spec.title : htmlType == 'page' ? singlePage.spec.title : ''}]],
-            isanchor: true,
-            isPost: [[${htmlType == 'post'}]],
-            isHome: [[${ htmlType == 'index'}]],
-            isHighlightShrink: false,
-            //isToc: [[${ htmlType == 'post'}]] && document.getElementById("card-toc"),
-            postUpdate: '2022-11-04 20:08:15',
-            copyright: undefined,
-            lightbox: 'fancybox',
-            lazyload: {enable: true, error: "/themes/theme-hao/assets/images/404s.gif"},
-            isFriendLinksInFooter: [[${theme.config.footer.footer_group.enable_footer_group}]],
-            loadingBox: [[${theme.config.other.loadingBoxs.loadingBoxEnable}]],
-            loadProgressBar: [[${theme.config.other.loadingBoxs.loadProgressBar}]],
-            allPlaylist: [[${theme.config.tool.nav_music.all_playlist}]],
-            navMusicEnable:[[${theme.config.tool.nav_music.nav_musicEnable}]],
-            isMusic: [[${ htmlType == 'music'}]],
-            helloText: [[${#strings.listSplit(theme.config.sidebar.profile.helloText, ',')}]],
-            assetsLink: [[${assets_link}]],
-            profileStyle: [[${theme.config.sidebar.profile.profileStyle}]],
-            rightMenuEnable: [[${theme.config.tool.rightMenu.rightMenuEnable}]],
-            source: {
-                links: {
-                    linksUrl: [[${ theme.config.link.linksUrl }]],
-                    linksData: [],
-                    linksNum: [[${theme.config.footer.footer_group.num}]],
-                },
-                jQuery: 'https://lf6-cdn-tos.bytecdntp.com/cdn/expire-1-M/jquery/3.6.0/jquery.min.js',
-                justifiedGallery: {
-                    js: 'https://npm.elemecdn.com/flickr-justified-gallery@2.1.2/dist/fjGallery.min.js',
-                    css: 'https://npm.elemecdn.com/flickr-justified-gallery@2.1.2/dist/fjGallery.css'
-                },
-                fancybox: {
-                    js: 'https://lf6-cdn-tos.bytecdntp.com/cdn/expire-1-M/fancybox/3.5.7/jquery.fancybox.min.js',
-                    css: 'https://lf3-cdn-tos.bytecdntp.com/cdn/expire-1-M/fancybox/3.5.7/jquery.fancybox.min.css'
-                },
-                twikoo:{
-                    js: [[${assets_link}]]+'/libs/twikoo/twikoo.all.min.js' + [[${theme_version}]],
-                    maxBarrage: [[${ theme.config.comments.twikoos.maxBarrage }]],
-                    barrageTime: [[${ theme.config.comments.twikoos.barrageTime }]],
-                    twikooUrl: "[(${theme.config.comments.twikoos.envId})]",
-                    accessToken: "[(${theme.config.comments.twikoos.accessToken})]",
-                    mailMd5: "[(${theme.config.comments.twikoos.mailMd5})]",
-                },
-                welcome:{
-                    key:"[(${theme.config.sidebar.welcome.key})]",
-                    locationLng: [[${theme.config.sidebar.welcome.locationLng}]],
-                    locationLat: [[${theme.config.sidebar.welcome.locationLat}]],
-                },
-                postAi:{
-                    ai : '[(${post.status.excerpt})]',
-                    randomNum : [[${theme.config.post.aiDescription.randomNum}]], //按钮最大的随机次数，也就是一篇文章最大随机出来几种
-                    basicWordCount : [[${theme.config.post.aiDescription.basicWordCount}]], // 最低获取字符数, 最小1000, 最大1999
-                    btnLink : "[(${theme.config.post.aiDescription.btnLink})]",
-                    gptName : "[(${theme.config.post.aiDescription.gptName})]",
-                    modeName : [[${theme.config.post.aiDescription.mode}]],
-                    switchBtn : [[${theme.config.post.aiDescription.switchBtn}]],  //# 可以配置是否显示切换按钮 以切换tianli/local
-                    keys : "[(${theme.config.post.aiDescription.key})]",
-                    Referers : "[(${theme.config.post.aiDescription.Referer})]",
-                }
-            },
-            date_suffix: {
-                just: '刚刚',
-                min: '分钟前',
-                hour: '小时前',
-                day: '天前',
-                month: '个月前'
-            },
-            Snackbar: {
-                chs_to_cht: "你已切换为繁体",
-                cht_to_chs: "你已切换为简体",
-                day_to_night: "你已切换为深色模式",
-                night_to_day: "你已切换为浅色模式",
-                bgLight: "#49b1f5",
-                bgDark: "#121212",
-                position: "top-center",
-            },
-            prism: {
-                enable: [[${ theme.config.code.enable }]],
-                enable_title: [[${ theme.config.code.enable_title }]],
-                enable_hr: [[${ theme.config.code.enable_hr }]],
-                enable_line: [[${ theme.config.code.enable_line }]],
-                enable_copy: [[${ theme.config.code.enable_copy }]],
-                enable_expander: [[${ theme.config.code.enable_expander }]],
-                prism_limit: Number([[${#strings.isEmpty(theme.config.code.height_limit) ? 300 : theme.config.code.height_limit}]])+30,
-                enable_height_limit: [[${theme.config.code.enable_height_limit}]]
-            },
-
-        };
-
-        // 根据htmlType设置页面title
-        setTitle = () => {
-            let title = ''
-
-            switch ([[${ htmlType }]]) {
-                case 'post':
-                    if (GLOBAL_CONFIG.postTitle != '')
-                        title = GLOBAL_CONFIG.postTitle
-                    break;
-                case 'page':
-                    if (GLOBAL_CONFIG.postTitle != '')
-                        title = GLOBAL_CONFIG.postTitle
-                    break;
-                case 'archive':
-                    title = '归档'
-                    break;
-                case 'category':
-                    title = '分类'
-                    break;
-                case 'links':
-                    title = '友链'
-                    break;
-                case 'tag':
-                    title = '标签'
-                    break;
-                case 'moments':
-                    title = '瞬间'
-                    break;
-                case 'fcircle':
-                    title = '友链鱼塘'
-                    break;
-                case 'about':
-                    title = '关于'
-                    break;
-                case '404':
-                    title = '页面没有找到'
-                    break;
-                case 'music':
-                    title = '音乐馆'
-                    break;
-                case 'photos':
-                    title = '图库'
-                    break;
-                case 'bangumis':
-                    title = '追番'
-                    break;
-            }
-            if (title != '')
-                document.title = title + ' - ' + [[${ site.title }]]
-        }
-
-        (() => {
-            setTitle()
-        })()
+    <th:block th:replace="~{modules/variables/site-config :: site-config}" />
 
 
-
-    </script>
-
-
-    <script data-pjax th:inline="javascript" th:if="${pluginFinder.available('PluginLinks')}">
-        var groupData = [[${ linkFinder.groupBy() }]]
-        if (groupData.length > 0) {
-            GLOBAL_CONFIG.source.links.linksData = groupData.flatMap((item) => {
-                return item.links
-            })
-        }
-    </script>
-
-
-
-</head>
+</th:block>
 
 </html>

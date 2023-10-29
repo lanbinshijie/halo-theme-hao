@@ -3,7 +3,7 @@ var btf = {
 
 
     // 修改时间显示"最近"
-    diffDate: function (d, more = false) {
+    diffDateExact: function (d, more = false) {
         const dateNow = new Date();
         const datePost = new Date(d);
         const dateDiff = dateNow.getTime() - datePost.getTime();
@@ -36,44 +36,6 @@ var btf = {
         return result;
     },
 
-    // loadLightbox: ele => {
-    //     const service = GLOBAL_CONFIG.lightbox;
-
-    //     if (service === "mediumZoom") {
-    //       const zoom = mediumZoom(ele);
-    //       zoom.on("open", e => {
-    //         const photoBg = document.documentElement.getAttribute("data-theme") === "dark" ? "#121212" : "#fff";
-    //         zoom.update({
-    //           background: photoBg,
-    //         });
-    //       });
-    //     }
-
-    //     if (service === "fancybox") {
-    //       ele.forEach(i => {
-    //         if (i.parentNode.tagName !== "A") {
-    //           const dataSrc = i.dataset.lazySrc || i.src;
-    //           const dataCaption = i.title || i.alt || "";
-    //           btf.wrap(i, "a", {
-    //             href: dataSrc,
-    //             "data-fancybox": "gallery",
-    //             "data-caption": dataCaption,
-    //             "data-thumb": dataSrc,
-    //           });
-    //         }
-    //       });
-
-    //       if (!window.fancyboxRun) {
-    //         Fancybox.bind("[data-fancybox]", {
-    //           Hash: false,
-    //           Thumbs: {
-    //             autoStart: false,
-    //           },
-    //         });
-    //         window.fancyboxRun = true;
-    //       }
-    //     }
-    // },
     loadLightbox: ele => {
 
         const jqLoadAndRun = () => {
@@ -89,9 +51,6 @@ var btf = {
             }
         }
 
-
-
-
         /**
          * fancybox
          */
@@ -100,14 +59,8 @@ var btf = {
                 ele.each(function (i, o) {
                     const $this = $(o)
                     const lazyloadSrc = $this.attr('data-lazy-src') || $this.attr('src')
-                    const lazyloadSrc1600 = lazyloadSrc + '_1600w'
                     const dataCaption = $this.attr('alt') || ''
-                    if (lazyloadSrc.indexOf('!blogimg') != -1) {
-                        $this.wrap(`<a href="${lazyloadSrc}" data-fancybox="images" data-caption="${dataCaption}" class="fancybox" data-srcset="${lazyloadSrc1600} 1600w"></a>`)
-                    } else {
-                        $this.wrap(`<a href="${lazyloadSrc}" data-fancybox="images" data-caption="${dataCaption}" class="fancybox" data-srcset="${lazyloadSrc} 1600w"></a>`)
-                    }
-
+                    $this.wrap(`<a href="${lazyloadSrc}" data-fancybox="images" data-caption="${dataCaption}" class="fancybox" data-srcset="${lazyloadSrc}"></a>`)
                 })
 
                 $().fancybox({
@@ -192,38 +145,24 @@ var btf = {
         }
     },
 
-    snackbarShow: (text, showAction, duration) => {
-        const sa = (typeof showAction !== 'undefined') ? showAction : false
-        const dur = (typeof duration !== 'undefined') ? duration : 5000
-        const position = GLOBAL_CONFIG.Snackbar.position
-        const bg = document.documentElement.getAttribute('data-theme') === 'light' ? GLOBAL_CONFIG.Snackbar.bgLight : GLOBAL_CONFIG.Snackbar.bgDark
-        const style = document.createElement('style');
-        document.head.appendChild(style);
-        const styleSheet = style.sheet;
-        styleSheet.insertRule(`:root{--heo-snackbar-time: ${dur}ms!important}`, styleSheet.cssRules.length);
+    snackbarShow: (text, showActionFunction = false, duration = 2000, actionText = false) => {
+        const { position, bgLight, bgDark } = GLOBAL_CONFIG.Snackbar;
+        const bg = document.documentElement.getAttribute("data-theme") === "light" ? bgLight : bgDark;
+        const root = document.querySelector(":root");
+        root.style.setProperty("--heo-snackbar-time", duration + "ms");
+
         Snackbar.show({
             text: text,
             backgroundColor: bg,
-            showAction: sa,
-            duration: dur,
-            pos: position
-        })
-
+            onActionClick: showActionFunction,
+            actionText: actionText,
+            showAction: actionText,
+            duration: duration,
+            pos: position,
+            customClass: "snackbar-css",
+        });
     },
 
-    initJustifiedGallery: function (selector) {
-        if (!(selector instanceof jQuery)) {
-            selector = $(selector)
-        }
-        selector.each(function (i, o) {
-            if ($(this).is(':visible')) {
-                $(this).justifiedGallery({
-                    rowHeight: 220,
-                    margins: 4
-                })
-            }
-        })
-    },
     initJustifiedGallerys: function (selector) {
         selector.forEach((function(t) {
                 btf.isHidden(t) || fjGallery(t, {
@@ -236,7 +175,7 @@ var btf = {
                 })
             }
         ))
-        document.querySelectorAll('#article-container .timeline')[0]?.classList.remove("loadings");
+        document.querySelectorAll('#article-container .loadings')[0]?.classList.remove("loadings");
     },
 
     diffDate: (d, more = false) => {
@@ -265,11 +204,11 @@ var btf = {
             } else if (dayCount >= 1) {
                 result = parseInt(dayCount) + '' + GLOBAL_CONFIG.date_suffix.day
             } else if (hourCount >= 1) {
-                result = '最近'
-                // result = parseInt(hourCount) + ' ' + GLOBAL_CONFIG.date_suffix.hour
+                // result = '最近'
+                result = parseInt(hourCount) + ' ' + GLOBAL_CONFIG.date_suffix.hour
             } else if (minuteCount >= 1) {
-                result = '最近'
-                // result = parseInt(minuteCount) + ' ' + GLOBAL_CONFIG.date_suffix.min
+                // result = '最近'
+                result = parseInt(minuteCount) + ' ' + GLOBAL_CONFIG.date_suffix.min
             } else {
                 result = GLOBAL_CONFIG.date_suffix.just
             }
@@ -392,6 +331,23 @@ var btf = {
         }
 
         return actualTop
+    },
+    //过滤标签
+    changeContent: (content,length = null)=>{
+        if (content === '') return content
+
+        content = content.replace(/<img.*?src="(.*?)"?[^\>]+>/ig, '[图片]') // replace image link
+        content = content.replace(/<a[^>]+?href=["']?([^"']+)["']?[^>]*>([^<]+)<\/a>/gi, '[链接]') // replace url
+        content = content.replace(/<pre><code>.*?<\/pre>/gi, '[代码]') // replace code
+        content = content.replace(/<[^>]+>/g, "") // remove html tag
+
+        if (length!=null){
+            if (content.length > length) {
+                content = content.substring(0, length) + '...'
+            }
+        }
+
+        return content
     }
 
 }

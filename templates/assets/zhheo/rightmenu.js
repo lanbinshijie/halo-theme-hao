@@ -54,6 +54,7 @@ window.oncontextmenu = function (event) {
         let $rightMenuPasteText = $('#menu-pastetext');
         let $rightMenuCommentText = $('#menu-commenttext');
         let $rightMenuNewWindow = $('#menu-newwindow');
+        let $rightMenuNewWindowImg = $('#menu-newwindowimg');
         let $rightMenuCopyLink = $('#menu-copylink');
         let $rightMenuCopyImg = $('#menu-copyimg');
         let $rightMenuDownloadImg = $('#menu-downloadimg');
@@ -102,10 +103,12 @@ window.oncontextmenu = function (event) {
             pluginMode = true;
             $rightMenuCopyImg.show();
             $rightMenuDownloadImg.show();
+            $rightMenuNewWindowImg.show();
             domImgSrc = imgsrc;
         } else {
             $rightMenuCopyImg.hide();
             $rightMenuDownloadImg.hide();
+            $rightMenuNewWindowImg.hide();
         }
 
         // 判断是否为输入框
@@ -318,7 +321,7 @@ rm.pasteText = function () {
 //引用到评论
 rm.rightMenuCommentText = function (txt) {
     rm.hideRightMenu();
-    var input = document.getElementsByClassName('el-textarea__inner')[0];
+    var input = document.getElementsByClassName(GLOBAL_CONFIG.source.comments.textarea)[0];
     let evt = document.createEvent('HTMLEvents');
     evt.initEvent('input', true, true);
     let inputValue = replaceAll(txt, '\n', '\n> ')
@@ -386,7 +389,6 @@ function addRightMenuClickEvent() {
     });
     $('#menu-translate').on('click', function () {
         rm.hideRightMenu();
-        translateInitialization();
     });
     $('#menu-copy').on('click', rm.copyPageUrl);
     $('#menu-pastetext').on('click', rm.pasteText);
@@ -403,7 +405,11 @@ function addRightMenuClickEvent() {
     });
     $('#menu-copylink').on('click', rm.copyLink);
     $('#menu-downloadimg').on('click', function () {
-        heo.downloadImage(domImgSrc, 'kunkunyu');
+        heo.downloadImage(domImgSrc, 'hao');
+    });
+    $('#menu-newwindowimg').on('click', function () {
+        window.open(domImgSrc, "_blank");
+        rm.hideRightMenu();
     });
     $('#menu-copyimg').on('click', function () {
         rm.writeClipImg(domImgSrc);

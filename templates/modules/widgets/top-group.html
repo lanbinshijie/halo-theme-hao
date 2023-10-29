@@ -3,7 +3,7 @@
 
 <!-- 推荐文章 -->
 <div class="topGroup" th:fragment="top-group" th:with='topGroupPosts = ${postFinder.list(1,6)},
-    postRandomImg=${#strings.contains(theme.config.layout.postRandomImg,"?") ? theme.config.layout.postRandomImg : theme.config.layout.postRandomImg+"?"}'
+    postRandomImg=${#strings.contains(theme.config.layout.postRandomImg,"?") ? theme.config.layout.postRandomImg+"&" : theme.config.layout.postRandomImg+"?"}'
 >
     <div class="recent-post-item"
          th:each="post : ${topGroupPosts}"
@@ -13,9 +13,13 @@
             <a th:href="@{${post.status.permalink}}" th:title="${post.spec.title}">
                 <span class="recent-post-top-text"
                       th:attr="onclick='pjax.loadUrl(\''+ @{${post.status.permalink}} +'\')'">荐</span>
-                <img class="post_bg" loading="lazy"
+                <img class="post_bg"
+                     th:with=' img = ${#strings.isEmpty(post.spec.cover) ? postRandomImg+post.spec.title : post.spec.cover}'
                      th:alt="${post.spec.title}"
-                     th:src='${#strings.isEmpty(post.spec.cover) ? postRandomImg+","+post.spec.title : post.spec.cover}'
+
+                     th:src="${isLazyload ? loadingImg : img}"
+                     th:data-lazy-src="${ isLazyload ? img : ''}"
+
                 />
             </a>
         </div>
@@ -30,24 +34,30 @@
     <!-- 自定义的文章右上角的推荐文章 -->
     <div class="recent-post-item"
          th:each="cuscomPost : ${theme.config.top.BannerRight.recommendPostCustom}"
-         th:if="${#strings.equals(theme.config.top.BannerRight.recommendPost, 'custom')}">
-        <div class="post_cover">
-            <a th:href="@{${cuscomPost.url}}" th:title="${cuscomPost.title}">
-                <span class="recent-post-top-text"
-                      th:attr="onclick='pjax.loadUrl(\''+ @{${cuscomPost.url}} +'\')'">荐</span>
-                <img class="post_bg" loading="lazy"
-                     th:alt="${cuscomPost.title}"
-                     th:src='${#strings.isEmpty(cuscomPost.cover) ? postRandomImg+","+cuscomPost.title : cuscomPost.cover}'
-                />
-            </a>
-        </div>
-        <div class="recent-post-info">
-            <a class="article-title"
-               th:href="@{${cuscomPost.url}}"
-               th:text="${cuscomPost.title}"
-               th:title="${cuscomPost.title}">
-            </a>
-        </div>
+         th:if="${#strings.equals(theme.config.top.BannerRight.recommendPost, 'custom') && not #strings.isEmpty(cuscomPost.post) }">
+        <th:block th:with="post = ${postFinder.getByName(cuscomPost.post)}">
+            <div class="post_cover">
+                <a th:href="@{${post.status.permalink}}" th:title="${post.spec.title}">
+                    <span class="recent-post-top-text"
+                          th:attr="onclick='pjax.loadUrl(\''+ @{${post.status.permalink}} +'\')'">荐</span>
+                    <img class="post_bg"
+                         th:with='img = ${#strings.isEmpty(post.spec.cover) ? postRandomImg+post.spec.title : post.spec.cover}'
+                         th:alt="${post.spec.title}"
+
+                         th:src="${isLazyload ? loadingImg : img}"
+                         th:data-lazy-src="${ isLazyload ? img : ''}"
+
+                    />
+                </a>
+            </div>
+            <div class="recent-post-info">
+                <a class="article-title"
+                   th:href="@{${post.status.permalink}}"
+                   th:text="${post.spec.title}"
+                   th:title="${post.spec.title}">
+                </a>
+            </div>
+        </th:block>
     </div>
 
     <!-- 今日推荐 -->
@@ -63,7 +73,7 @@
         </div>
         <div class="banner-button-group">
             <a class="banner-button" onclick="window.event.cancelBubble=!0;heo.hideTodayCard()">
-                <i class="iconfont icon-plus-circle"></i>
+                <i class="haofont hao-icon-circle-plus"></i>
                 <span class="banner-button-text">更多推荐</span>
             </a>
         </div>

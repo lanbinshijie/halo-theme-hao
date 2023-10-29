@@ -1,30 +1,38 @@
 <!DOCTYPE html>
-<html lang="en" th:replace="~{modules/layouts/layout :: layout(content = ~{::content}, htmlType = 'page')}"
-      xmlns:th="http://www.thymeleaf.org">
-
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{modules/layouts/layout :: layout(content = ~{::content}, htmlType = 'page',title = ${singlePage.spec.title + ' | ' + site.title}, head = ~{::head})}">
+<th:block th:fragment="head">
+    <th:block th:replace="~{modules/common/open-graph :: open-graph(_title = ${singlePage.spec.title},
+                _permalink = ${singlePage.status.permalink},
+                _cover = ${singlePage.spec.cover},
+                _excerpt = ${singlePage.status.excerpt},
+                _type = 'website')}"></th:block>
+</th:block>
 <th:block th:fragment="content">
 
     <div class="page" id="body-wrap">
 
         <!-- 头部导航栏 -->
         <header class="not-top-img" id="page-header">
-            <nav th:replace="~{modules/nav :: nav(title = null)}"></nav>
+            <nav th:replace="~{modules/nav :: nav(title = ${singlePage.spec.title})}"></nav>
         </header>
         <main class="layout hide-aside" id="content-inner">
             <div id="page">
-                <div id="album">
-                    <th:div  th:replace="~{macro/author-content :: author-content(background = ${theme.config.photos.backgroundImg},
+                <div id="album" th:if="${#strings.equals(theme.config.photos.photosStyle, 'default')}">
+                    <div th:replace="~{macro/author-content :: author-content(background = ${theme.config.photos.backgroundImg},
                         smallTitle = ${theme.config.photos.smallTitle},
                         bigTitle = ${theme.config.photos.bigTitle},
                         detail = ${theme.config.photos.detail},
                         buttonUrl = '',
-                        buttonTitle = '')}" />
+                        buttonTitle = '')}"></div>
 
                     <div class="card-album">
                         <th:block th:each="group : ${photoFinder.groupBy()}">
-                            <div class="card" th:onclick="go([[${group.metadata.name}]])">
-                                <img  class="card_cover entered loaded"
-                                      th:src="${#annotations.get(group, 'cover')}">
+                            <div class="card" th:onclick="pjax.loadUrl([['/photos?group='+${group.metadata.name}]])">
+                                <img class="card_cover"
+                                     th:src="${isLazyload ? loadingImg : #annotations.get(group, 'cover')}"
+                                     th:data-lazy-src="${ isLazyload ? #annotations.get(group, 'cover') : ''}"
+                                >
                                 <div class="card__content">
                                     <p class="card__category" th:text="${group.spec.displayName}"></p>
                                     <h3 class="card__heading" th:text="${#annotations.get(group, 'description')}"></h3>
@@ -36,12 +44,36 @@
                         </th:block>
                     </div>
                 </div>
-                <script>
-                    const go = (photo_group_name)=>{
-                        window.location.href='/photos?photo_group_name='+photo_group_name
-                    }
-                </script>
+                <div class="gallery-groups" th:if="${#strings.equals(theme.config.photos.photosStyle, 'one')}">
+                    <h2 style="text-align:center;">[[${theme.config.photos.bigTitle}]]</h2>
+                    <div class="gallery-group-main">
+                        <th:block th:each="group : ${photoFinder.groupBy()}">
+                            <figure class="gallery-group no-lightbox">
+                                <img class="gallery-group-img no-lightbox"
+                                     th:src="${isLazyload ? loadingImg : #annotations.get(group, 'cover')}"
+                                     th:data-lazy-src="${ isLazyload ? #annotations.get(group, 'cover') : ''}"
+                                     alt="Group Image Gallery">
+                                <figcaption>
+                                    <div class="gallery-group-name">[[${group.spec.displayName}]]</div>
+                                    <p>[[${#annotations.get(group, 'description')}]]</p><a target="_blank"
+                                                                                           rel="noopener" th:onclick="pjax.loadUrl([['/photos?group='+${group.metadata.name}]])"></a>
+                                </figcaption>
+                            </figure>
+                        </th:block>
+                    </div>
+                </div>
                 <style>
+                    .gallery-groups {
+                        box-shadow: var(--heo-shadow-border);
+                        padding: 1rem 2rem;
+                        border-radius: 12px;
+                        background: var(--heo-card-bg);
+                        border: var(--style-border);
+                        width: 100%;
+                        align-self: flex-start;
+                        animation: slide-in 0.6s 0.1s backwards;
+                    }
+
                     :root {
                         --album-background-dark: #2d3548;
                         --album-text-light: rgba(255, 255, 255, 0.6);

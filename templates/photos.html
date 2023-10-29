@@ -1,48 +1,129 @@
 <!DOCTYPE html>
-<html lang="en" th:replace="~{modules/layouts/layout :: layout(content = ~{::content}, htmlType = 'photos')}"
-      xmlns:th="http://www.thymeleaf.org">
-
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{modules/layouts/layout :: layout(content = ~{::content},htmlType = 'photos',title = ${title + ' | ' + site.title}, head = ~{::head},_title = ${title})}">
+<th:block th:fragment="head">
+    <th:block th:replace="~{modules/common/open-graph :: open-graph(_title = ${_title},
+                _permalink = '/photos',
+                _cover = ${theme.config.other.opengraph.image},
+                _excerpt = ${site.seo.description},
+                _type = 'website')}"></th:block>
+</th:block>
 <th:block th:fragment="content">
 
     <div class="page" id="body-wrap">
         <!-- 头部导航栏 -->
         <header class="not-top-img" id="page-header">
-            <nav th:replace="~{modules/nav :: nav(title = null)}"></nav>
+            <nav th:replace="~{modules/nav :: nav(title = ${_title})}"></nav>
         </header>
         <main class="layout hide-aside" id="content-inner">
             <div id="page">
-                <th:block th:each="group : ${photoFinder.groupBy()}">
-
-
-                    <th:block th:if="${#strings.equals(group.metadata.name, param.photo_group_name)}"
-                              th:with="description = ${#annotations.get(group, 'description')},
+                <th:block th:if="${#strings.equals(theme.config.photos.photosStyle, 'default')}">
+                    <th:block th:each="group : ${photoFinder.groupBy()}">
+                        <th:block
+                                th:if="${#strings.equals(group.metadata.name, param.group) && not #strings.isEmpty(param.group)}"
+                                th:with="description = ${#annotations.get(group, 'description')},
                          background = ${#annotations.get(group, 'background')}">
-                        <th:div  th:replace="~{macro/author-content :: author-content(background = ${background},
-                        smallTitle = '相册集',
-                        bigTitle = ${group.spec.displayName},
-                        detail = ${description},
-                        buttonUrl = '',
-                        buttonTitle = '')}" />
+                            <div class="author-content author-content-item essayPage single"
+                                 th:style="'background:url('+${background}+') left 28% / cover no-repeat !important;'">
+                                <div class="card-content">
+                                    <div class="author-content-item-tips">相册集</div>
+                                    <span class="author-content-item-title" th:text="${group.spec.displayName}"></span>
+                                    <div class="content-bottom">
+                                        <div class="tips" th:text="${description}"></div>
+                                    </div>
+                                    <div class="banner-button-group">
+                                        <a class="banner-button" target="_blank"
+                                           th:attr="onclick='pjax.loadUrl(\''+ ${theme.config.photos.topLink} +'\')'">
+                                            <i class="haofont hao-icon-circle-arrow-right"></i>
+                                            <span class="banner-button-text" th:text="返回"></span>
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </th:block>
                     </th:block>
-
-                </th:block>
-
-                <div id="article-container">
-                    <section class="timeline page-1 loadings">
-                        <div class="type-gallery ">
-                            <div class="gallery">
-                                <div class="fj-gallery-item"
-                                     th:each="photo : ${photoFinder.listBy(param.photo_group_name)}">
-                                    <div class="tag-address">[[${photo.spec.displayName}]]</div>
-                                    <img th:src="${photo.spec.url}" th:alt="${photo.spec.description}"
-                                         th:title="${photo.spec.description}">
-
+                    <th:block th:if="${#strings.isEmpty(param.group)}"
+                              th:with="background = ${theme.config.photos.backgroundImg}">
+                        <div class="author-content author-content-item essayPage single"
+                             th:style="'background:url('+${background}+') left 28% / cover no-repeat !important;'">
+                            <div class="card-content">
+                                <div class="author-content-item-tips">相册集</div>
+                                <span class="author-content-item-title">全部</span>
+                                <div class="content-bottom">
+                                    <div class="tips"></div>
+                                </div>
+                                <div class="banner-button-group">
+                                    <a class="banner-button" target="_blank"
+                                       th:attr="onclick='pjax.loadUrl(\''+ ${theme.config.photos.topLink} +'\')'">
+                                        <i class="haofont hao-icon-circle-arrow-right"></i>
+                                        <span class="banner-button-text" th:text="返回"></span>
+                                    </a>
                                 </div>
                             </div>
                         </div>
-                    </section>
+                    </th:block>
+                    <div id="article-container">
+                        <section class="page-1 loadings">
+                            <div class="type-gallery ">
+                                <div class="gallery">
+                                    <div class="fj-gallery-item" th:each="photo : ${photos.items}">
+                                        <div th:if="${theme.config.photos.tagEnable}" class="tag-address">
+                                            [[${photo.spec.displayName}]]</div>
+                                        <img th:src="${photo.spec.url}" th:alt="${photo.spec.description}"
+                                             th:title="${photo.spec.description}">
+
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+                    </div>
+                    <!-- 分页 -->
+                    <th:block th:with="param_group = ${not #strings.isEmpty(param.group) ? '?group='+param.group : ''}">
+                        <div th:replace="~{modules/widgets/page :: page('/photos',${photos},false,${param_group})}"></div>
+                    </th:block>
+                </th:block>
+
+                <div class="gallery-groups" th:if="${#strings.equals(theme.config.photos.photosStyle, 'one')}">
+                    <th:block th:each="group : ${photoFinder.groupBy()}">
+                        <h1 style="margin: 8px 0px 20px" th:if="${#strings.equals(group.metadata.name, param.group) && not #strings.isEmpty(param.group) }">
+                            [[${group.spec.displayName}]]
+                        </h1>
+                        <h1 style="margin: 8px 0px 20px" th:if="${#strings.isEmpty(param.group) }">
+                            全部
+                        </h1>
+                    </th:block>
+                    <div id="article-container">
+                        <section class="page-1 loadings">
+                            <div class="type-gallery ">
+                                <div class="gallery">
+                                    <div class="fj-gallery-item" th:each="photo : ${photos.items}">
+                                        <div th:if="${theme.config.photos.tagEnable}" class="tag-address">
+                                            [[${photo.spec.displayName}]]</div>
+                                        <img th:src="${photo.spec.url}" th:alt="${photo.spec.description}"
+                                             th:title="${photo.spec.description}">
+
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+                    </div>
+                    <!-- 分页 -->
+                    <th:block th:with="param_group = ${not #strings.isEmpty(param.group) ? '?group='+param.group : ''}">
+                        <div th:replace="~{modules/widgets/page :: page('/photos',${photos},false,${param_group})}"></div>
+                    </th:block>
                 </div>
+
                 <style>
+                    .gallery-groups {
+                        box-shadow: var(--heo-shadow-border);
+                        padding: 1rem 2rem;
+                        border-radius: 12px;
+                        background: var(--heo-card-bg);
+                        border: var(--style-border);
+                        width: 100%;
+                        align-self: flex-start;
+                        animation: slide-in 0.6s 0.1s backwards;
+                    }
 
                     #content-inner .loadings .type-gallery {
                         opacity: 0
@@ -162,7 +243,7 @@
                 <!--/* 评论组件 */-->
                 <th:block th:replace="~{modules/comment :: comment(group = 'content.halo.run',
                   kind = 'SinglePage',
-                  name = 'moments',
+                  name = 'photos',
                   allowComment = true)}" />
             </div>
 
